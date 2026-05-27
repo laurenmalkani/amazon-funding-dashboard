@@ -3,378 +3,418 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Amazon Conservation Funding Dashboard</title>
+<title>Amazon Funding is Drying Up</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #1A1A1A; color: #f0f0f0; min-height: 100vh; padding: 24px 24px 32px; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #111; color: #f0f0f0; height: 100vh; overflow: hidden; display: grid; grid-template-rows: auto 1fr auto; }
 
-  .header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; gap: 16px; flex-wrap: wrap; }
-  .header-left h1 { font-size: 18px; font-weight: 600; color: #ffffff; margin-bottom: 4px; }
-  .header-left p { font-size: 12px; color: #8A8A8A; }
+  /* TOP BAR */
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; border-bottom: 0.5px solid #2a2a2a; }
+  .headline { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+  .nav-pills { display: flex; gap: 8px; }
+  .nav-pill { font-size: 11px; padding: 5px 14px; border-radius: 20px; border: 0.5px solid #333; background: transparent; color: #666; cursor: pointer; transition: all 0.15s; }
+  .nav-pill.active { background: #27AE60; border-color: #27AE60; color: #fff; }
+  .nav-pill:hover:not(.active) { border-color: #555; color: #ccc; }
 
-  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
-  .metric { background: #242424; border: 0.5px solid #333; border-radius: 10px; padding: 14px 16px; }
-  .metric-label { font-size: 11px; color: #8A8A8A; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
-  .metric-value { font-size: 22px; font-weight: 600; color: #ffffff; }
-  .metric-sub { font-size: 11px; color: #8A8A8A; margin-top: 3px; }
+  /* MAIN LAYOUT */
+  .main { display: grid; grid-template-columns: 1fr 1.4fr; overflow: hidden; }
+
+  /* LEFT — MAP */
+  .map-side { position: relative; background: #0d0d0d; display: flex; flex-direction: column; align-items: center; justify-content: center; border-right: 0.5px solid #1e1e1e; padding: 20px; overflow: hidden; }
+  .map-label { position: absolute; top: 16px; left: 20px; font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 0.1em; }
+  .map-year-badge { position: absolute; top: 16px; right: 20px; font-size: 11px; color: #27AE60; font-weight: 600; }
+  #mapSvg { width: 100%; max-height: 78%; }
+  .map-slider-wrap { width: 85%; margin-top: 12px; }
+  .map-slider-label { display: flex; justify-content: space-between; font-size: 10px; color: #444; margin-bottom: 6px; }
+  input[type=range].map-slider { width: 100%; -webkit-appearance: none; appearance: none; height: 3px; background: #2a2a2a; border-radius: 2px; outline: none; }
+  input[type=range].map-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #27AE60; cursor: pointer; border: 2px solid #111; }
+
+  /* RIGHT — DATA */
+  .data-side { display: grid; grid-template-rows: auto 1fr auto auto; overflow: hidden; padding: 16px; gap: 12px; }
+
+  /* METRICS */
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .metric { background: #1a1a1a; border: 0.5px solid #2a2a2a; border-radius: 8px; padding: 10px 12px; }
+  .metric-label { font-size: 9px; color: #555; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .metric-value { font-size: 20px; font-weight: 700; color: #fff; line-height: 1; }
+  .metric-sub { font-size: 10px; color: #555; margin-top: 3px; }
+  .metric-value.up { color: #27AE60; }
   .metric-value.down { color: #E67E22; }
-  .metric-value.up { color: #2ECC71; }
+  .metric-value.warn { color: #e74c3c; }
 
-  .main-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; margin-bottom: 12px; }
-  .panel { background: #242424; border: 0.5px solid #333; border-radius: 12px; padding: 16px; }
-  .panel-label { font-size: 10px; color: #8A8A8A; margin-bottom: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; }
+  /* CHARTS GRID */
+  .charts-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 10px; overflow: hidden; min-height: 0; }
+  .panel { background: #1a1a1a; border: 0.5px solid #2a2a2a; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; min-height: 0; }
+  .panel-label { font-size: 9px; color: #555; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .panel-desc { font-size: 10px; color: #444; margin-bottom: 8px; }
+  .toggle-row { display: flex; gap: 5px; margin-bottom: 8px; }
+  .tog { font-size: 10px; padding: 3px 8px; border-radius: 5px; border: 0.5px solid #2a2a2a; background: transparent; color: #555; cursor: pointer; transition: all 0.15s; }
+  .tog.active { background: rgba(39,174,96,0.15); border-color: #27AE60; color: #2ECC71; }
+  .chart-wrap { flex: 1; position: relative; min-height: 0; }
 
-  .toggle-row { display: flex; gap: 6px; margin-bottom: 12px; }
-  .tog { font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 0.5px solid #3a3a3a; background: transparent; color: #8A8A8A; cursor: pointer; transition: all 0.15s; }
-  .tog.active { background: rgba(39,174,96,0.15); border-color: #27AE60; color: #2ECC71; font-weight: 500; }
-  .tog:hover:not(.active) { background: #2a2a2a; color: #f0f0f0; }
+  /* COUNTRY LIST */
+  .country-list { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; flex: 1; }
+  .cbar-row { display: flex; align-items: center; gap: 6px; }
+  .cbar-name { font-size: 11px; color: #777; min-width: 70px; }
+  .cbar-track { flex: 1; height: 5px; background: #222; border-radius: 3px; overflow: hidden; }
+  .cbar-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
+  .cbar-amt { font-size: 10px; color: #555; min-width: 40px; text-align: right; }
 
-  .country-bars { display: flex; flex-direction: column; gap: 9px; }
-  .cbar-row { display: flex; align-items: center; gap: 8px; }
-  .cbar-name { font-size: 12px; color: #8A8A8A; min-width: 80px; }
-  .cbar-track { flex: 1; height: 7px; background: #333; border-radius: 4px; overflow: hidden; }
-  .cbar-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
-  .cbar-amt { font-size: 11px; color: #8A8A8A; min-width: 46px; text-align: right; }
+  /* STACKED AREA */
+  .legend-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+  .leg-item { display: flex; align-items: center; gap: 4px; font-size: 10px; color: #666; }
+  .leg-sq { width: 8px; height: 8px; border-radius: 1px; flex-shrink: 0; }
 
-  .funder-panel { margin-bottom: 12px; }
-  .legend-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 10px; }
-  .leg-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #8A8A8A; }
-  .leg-sq { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  /* ANNOTATION */
+  .anno { font-size: 10px; color: #666; padding: 7px 10px; background: rgba(39,174,96,0.06); border-radius: 6px; border-left: 2px solid #27AE60; line-height: 1.5; margin-top: 6px; }
+  .anno strong { color: #2ECC71; }
+  .anno.warn { background: rgba(231,76,60,0.06); border-left-color: #e74c3c; }
+  .anno.warn strong { color: #e74c3c; }
 
-  .annotation { font-size: 11px; color: #8A8A8A; margin-top: 10px; padding: 10px 12px; background: rgba(39,174,96,0.07); border-radius: 8px; border-left: 2px solid #27AE60; line-height: 1.6; }
-  .annotation strong { color: #2ECC71; }
+  /* FUNDER BAR */
+  .funder-row { background: #1a1a1a; border: 0.5px solid #2a2a2a; border-radius: 10px; padding: 10px 12px; }
+  .funder-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .funder-chart-wrap { position: relative; height: 50px; }
 
-  /* DUAL RANGE SLIDER */
-  .range-panel { background: #242424; border: 0.5px solid #333; border-radius: 12px; padding: 16px 20px; margin-bottom: 12px; }
-  .range-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-  .range-header-label { font-size: 10px; color: #8A8A8A; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; }
-  .range-display { font-size: 13px; font-weight: 600; color: #2ECC71; }
+  /* RANGE SLIDER */
+  .range-bar { padding: 10px 12px; background: #1a1a1a; border: 0.5px solid #2a2a2a; border-radius: 10px; }
+  .range-top { display: flex; justify-content: space-between; margin-bottom: 8px; }
+  .range-lbl { font-size: 9px; color: #555; text-transform: uppercase; letter-spacing: 0.08em; }
+  .range-val { font-size: 11px; font-weight: 600; color: #27AE60; }
+  .dual-wrap { position: relative; height: 24px; display: flex; align-items: center; }
+  .dual-track { position: absolute; left: 0; right: 0; height: 3px; background: #2a2a2a; border-radius: 2px; }
+  .dual-fill { position: absolute; height: 3px; background: #27AE60; border-radius: 2px; pointer-events: none; }
+  .dual-wrap input[type=range] { position: absolute; left: 0; right: 0; width: 100%; -webkit-appearance: none; appearance: none; background: transparent; pointer-events: none; height: 24px; margin: 0; }
+  .dual-wrap input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #2ECC71; cursor: pointer; border: 2px solid #111; box-shadow: 0 0 0 1px #27AE60; pointer-events: all; }
+  .dual-wrap input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #2ECC71; cursor: pointer; border: 2px solid #111; pointer-events: all; }
+  .range-labels { display: flex; justify-content: space-between; margin-top: 4px; }
+  .range-labels span { font-size: 9px; color: #333; }
+  .range-labels span.on { color: #666; }
 
-  .slider-wrap { position: relative; height: 36px; display: flex; align-items: center; }
-  .slider-track { position: absolute; left: 0; right: 0; height: 4px; background: #333; border-radius: 2px; }
-  .slider-fill { position: absolute; height: 4px; background: #27AE60; border-radius: 2px; pointer-events: none; }
-  .slider-wrap input[type=range] {
-    position: absolute; left: 0; right: 0; width: 100%;
-    -webkit-appearance: none; appearance: none;
-    background: transparent; pointer-events: none;
-    height: 36px; margin: 0;
-  }
-  .slider-wrap input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none; appearance: none;
-    width: 20px; height: 20px; border-radius: 50%;
-    background: #2ECC71; cursor: pointer;
-    border: 2px solid #1A1A1A;
-    box-shadow: 0 0 0 1.5px #27AE60;
-    pointer-events: all;
-  }
-  .slider-wrap input[type=range]::-moz-range-thumb {
-    width: 20px; height: 20px; border-radius: 50%;
-    background: #2ECC71; cursor: pointer;
-    border: 2px solid #1A1A1A;
-    pointer-events: all;
-  }
-  .slider-labels { display: flex; justify-content: space-between; margin-top: 6px; }
-  .slider-labels span { font-size: 11px; color: #4A4A4A; }
-  .slider-labels span.active-label { color: #8A8A8A; }
-
-  .download-bar { display: flex; gap: 10px; justify-content: flex-end; margin-top: 12px; flex-wrap: wrap; }
-  .dl-btn { font-size: 12px; padding: 8px 16px; border-radius: 8px; border: 0.5px solid #3a3a3a; background: #2a2a2a; color: #8A8A8A; cursor: pointer; transition: all 0.15s; font-weight: 500; }
-  .dl-btn:hover { background: #333; color: #f0f0f0; }
+  /* DOWNLOAD */
+  .dl-row { position: absolute; bottom: 12px; right: 16px; display: flex; gap: 8px; }
+  .dl-btn { font-size: 10px; padding: 5px 12px; border-radius: 6px; border: 0.5px solid #2a2a2a; background: #1a1a1a; color: #666; cursor: pointer; }
   .dl-btn.primary { background: #27AE60; color: #fff; border-color: #27AE60; }
-  .dl-btn.primary:hover { background: #219a52; }
 
-  @media (max-width: 700px) {
-    .metrics { grid-template-columns: repeat(2, 1fr); }
-    .main-grid { grid-template-columns: 1fr; }
-  }
+  /* STORY CARDS */
+  .story-cards { display: flex; gap: 0; border-top: 0.5px solid #1e1e1e; }
+  .story-card { flex: 1; padding: 10px 16px; border-right: 0.5px solid #1e1e1e; cursor: pointer; transition: background 0.15s; }
+  .story-card:last-child { border-right: none; }
+  .story-card.active { background: #1a1a1a; }
+  .story-card:hover:not(.active) { background: #161616; }
+  .sc-label { font-size: 9px; color: #444; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 3px; }
+  .sc-title { font-size: 11px; color: #888; font-weight: 500; margin-bottom: 4px; }
+  .story-card.active .sc-title { color: #fff; }
+  .sc-btn { font-size: 9px; padding: 3px 8px; border-radius: 4px; border: 0.5px solid #333; background: transparent; color: #555; cursor: pointer; }
+  .story-card.active .sc-btn { background: #27AE60; border-color: #27AE60; color: #fff; }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <div class="header-left">
-    <h1>Amazon Conservation Funding</h1>
-    <p>International funding 2013–2027 · World Bank Group VR</p>
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="headline">Amazon Funding is Drying Up</div>
+  <div class="nav-pills">
+    <button class="nav-pill active">The Decline</button>
+    <button class="nav-pill">Concentration</button>
+    <button class="nav-pill">Future Cliff</button>
   </div>
 </div>
 
-<div class="metrics">
-  <div class="metric">
-    <div class="metric-label">Total (selected range)</div>
-    <div class="metric-value" id="m-total">—</div>
-    <div class="metric-sub" id="m-years">—</div>
-  </div>
-  <div class="metric">
-    <div class="metric-label">Peak year</div>
-    <div class="metric-value up">$686M</div>
-    <div class="metric-sub">2019</div>
-  </div>
-  <div class="metric">
-    <div class="metric-label">End of range</div>
-    <div class="metric-value down" id="m-latest">—</div>
-    <div class="metric-sub" id="m-latest-year">—</div>
-  </div>
-  <div class="metric">
-    <div class="metric-label">Brazil share</div>
-    <div class="metric-value" id="m-brazil">—</div>
-    <div class="metric-sub">of selected range</div>
-  </div>
-</div>
+<!-- MAIN -->
+<div class="main">
 
-<div class="main-grid">
-  <div class="panel">
-    <div class="panel-label">Funding by year</div>
-    <div class="toggle-row">
-      <button class="tog active" onclick="setBreakdown('total',this)">Total</button>
-      <button class="tog" onclick="setBreakdown('funder',this)">By funder</button>
-      <button class="tog" onclick="setBreakdown('country',this)">By country</button>
+  <!-- LEFT: MAP -->
+  <div class="map-side">
+    <div class="map-label">Amazon Basin</div>
+    <svg id="mapSvg" viewBox="0 0 600 500" xmlns="http://www.w3.org/2000/svg">
+      <!-- Basin outline -->
+      <path d="M320,30 Q380,20 420,50 Q460,80 480,120 Q500,160 490,200 Q480,240 460,270 Q440,300 410,320 Q380,340 350,350 Q320,360 290,355 Q260,350 240,340 Q200,320 180,300 Q160,280 150,260 Q140,240 145,220 Q150,200 160,185 Q170,170 175,155 Q180,140 170,125 Q160,110 165,95 Q170,80 185,68 Q200,55 220,45 Q240,35 260,30 Q290,25 320,30Z" fill="none" stroke="#2a2a2a" stroke-width="1.5"/>
+      <!-- Country blobs - sized roughly by area in basin -->
+      <g id="countryBrazil">
+        <ellipse cx="330" cy="250" rx="110" ry="90" fill="#27AE60" opacity="0.15" class="country-shape" data-country="Brazil"/>
+        <text x="330" y="255" text-anchor="middle" fill="#27AE60" font-size="11" font-weight="600">Brazil</text>
+      </g>
+      <g id="countryPeru">
+        <ellipse cx="175" cy="260" rx="55" ry="65" fill="#2980B9" opacity="0.15" class="country-shape" data-country="Peru"/>
+        <text x="175" y="265" text-anchor="middle" fill="#2980B9" font-size="10">Peru</text>
+      </g>
+      <g id="countryColombia">
+        <ellipse cx="255" cy="100" rx="60" ry="45" fill="#E67E22" opacity="0.15" class="country-shape" data-country="Colombia"/>
+        <text x="255" y="105" text-anchor="middle" fill="#E67E22" font-size="10">Colombia</text>
+      </g>
+      <g id="countryEcuador">
+        <ellipse cx="148" cy="175" rx="35" ry="30" fill="#9B59B6" opacity="0.15" class="country-shape" data-country="Ecuador"/>
+        <text x="148" y="179" text-anchor="middle" fill="#9B59B6" font-size="9">Ecuador</text>
+      </g>
+      <g id="countryBolivia">
+        <ellipse cx="290" cy="380" rx="50" ry="35" fill="#1AA3C9" opacity="0.15" class="country-shape" data-country="Bolivia"/>
+        <text x="290" y="384" text-anchor="middle" fill="#1AA3C9" font-size="10">Bolivia</text>
+      </g>
+      <g id="countryGuyana">
+        <ellipse cx="430" cy="115" rx="35" ry="28" fill="#F39C12" opacity="0.15" class="country-shape" data-country="Guyana"/>
+        <text x="430" y="119" text-anchor="middle" fill="#F39C12" font-size="9">Guyana</text>
+      </g>
+      <g id="countrySuriname">
+        <ellipse cx="478" cy="155" rx="22" ry="18" fill="#8A8A8A" opacity="0.15" class="country-shape" data-country="Suriname"/>
+        <text x="478" y="158" text-anchor="middle" fill="#8A8A8A" font-size="8">Suriname</text>
+      </g>
+      <g id="countryVenezuela">
+        <ellipse cx="355" cy="72" rx="28" ry="20" fill="#e74c3c" opacity="0.15" class="country-shape" data-country="Venezuela"/>
+        <text x="355" y="76" text-anchor="middle" fill="#e74c3c" font-size="8">Venezuela</text>
+      </g>
+    </svg></div>
+
+  <!-- RIGHT: DATA -->
+  <div class="data-side">
+
+    <!-- METRICS -->
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-label">Total (range)</div>
+        <div class="metric-value" id="m-total">$6.6B</div>
+        <div class="metric-sub" id="m-years">2013 – 2027</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Peak year</div>
+        <div class="metric-value up">$686M</div>
+        <div class="metric-sub">2019</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">End of range</div>
+        <div class="metric-value down" id="m-latest">$26M</div>
+        <div class="metric-sub" id="m-latest-year">2027</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Committed 2026</div>
+        <div class="metric-value warn">$76M</div>
+        <div class="metric-sub">vs $686M peak 2019</div>
+      </div>
     </div>
-    <div style="position:relative;width:100%;height:240px;">
-      <canvas id="yearChart" role="img" aria-label="Bar chart showing Amazon conservation funding by year. Funding peaked at $686M in 2019 and has declined since.">Funding peaked at $686M in 2019 and declined to $332M by 2023.</canvas>
+
+    <!-- CHARTS GRID -->
+    <div class="charts-grid">
+
+      <!-- BAR CHART -->
+      <div class="panel">
+        <div class="panel-label">Funding by year</div>
+        <div class="toggle-row">
+          <button class="tog active" onclick="setBreakdown('total',this)">Total</button>
+          <button class="tog" onclick="setBreakdown('funder',this)">By funder</button>
+          <button class="tog" onclick="setBreakdown('country',this)">By country</button>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="yearChart" role="img" aria-label="Funding by year bar chart"></canvas>
+        </div>
+      </div>
+
+      <!-- COUNTRY LIST -->
+      <div class="panel">
+        <div class="panel-label">Country breakdown</div>
+        
+        <div class="country-list" id="country-bars"></div>
+      </div>
+
     </div>
-    <div class="annotation" id="chart-annotation"></div>
-  </div>
 
-  <div class="panel">
-    <div class="panel-label">Country breakdown (selected range)</div>
-    <div class="country-bars" id="country-bars"></div>
-    <div class="annotation" id="country-annotation" style="margin-top:12px"></div>
+    <!-- STACKED AREA: FUNDER COLLAPSE -->
+    <div class="panel" style="min-height:0">
+      <div class="panel-label">The policy shift, not donor fatigue</div>
+      <div class="legend-row" id="area-legend"></div>
+      <div class="chart-wrap" style="min-height:80px">
+        <canvas id="areaChart" role="img" aria-label="Stacked area by funder type showing bilateral collapse"></canvas>
+      </div>
+    </div>
+
+    <!-- RANGE SLIDER -->
+    <div class="range-bar">
+      <div class="range-top">
+        <span class="range-lbl">Year range</span>
+        <span class="range-val" id="range-display">2013 — 2027</span>
+      </div>
+      <div class="dual-wrap">
+        <div class="dual-track"></div>
+        <div class="dual-fill" id="dual-fill"></div>
+        <input type="range" id="yr-start" min="0" max="14" value="0" step="1" oninput="onSlider()">
+        <input type="range" id="yr-end" min="0" max="14" value="14" step="1" oninput="onSlider()">
+      </div>
+      <div class="range-labels" id="range-labels"></div>
+    </div>
+
   </div>
 </div>
 
-<div class="panel funder-panel">
-  <div class="panel-label">Funder type breakdown (selected range)</div>
-  <div class="legend-row" id="funder-legend"></div>
-  <div style="position:relative;width:100%;height:90px;">
-    <canvas id="funderChart" role="img" aria-label="Stacked horizontal bar showing funder type breakdown.">Bilateral governments provide 64% of all funding.</canvas>
+<!-- STORY CARDS -->
+<div class="story-cards">
+  <div class="story-card active">
+    <div class="sc-label">Data Story 1</div>
+    <div class="sc-title">"Amazon Funding is Drying Up"</div>
+    <button class="sc-btn">Active</button>
+  </div>
+  <div class="story-card">
+    <div class="sc-label">Data Story 2</div>
+    <div class="sc-title">"Half the Amazon, Half the Money"</div>
+    <button class="sc-btn">Begin</button>
+  </div>
+  <div class="story-card">
+    <div class="sc-label">Data Story 3</div>
+    <div class="sc-title">"The Pipeline is Expiring"</div>
+    <button class="sc-btn">Begin</button>
   </div>
 </div>
 
-<!-- RANGE SLIDER AT BOTTOM -->
-<div class="range-panel">
-  <div class="range-header">
-    <div class="range-header-label">Year range</div>
-    <div class="range-display" id="range-display">2013 — 2027</div>
-  </div>
-  <div class="slider-wrap">
-    <div class="slider-track"></div>
-    <div class="slider-fill" id="slider-fill"></div>
-    <input type="range" id="yr-start" min="0" max="14" value="0" step="1" oninput="onSlider()">
-    <input type="range" id="yr-end" min="0" max="14" value="14" step="1" oninput="onSlider()">
-  </div>
-  <div class="slider-labels" id="slider-labels"></div>
-</div>
-
-<div class="download-bar">
-  <button class="dl-btn" onclick="downloadCSV()">↓ Download CSV</button>
-  <button class="dl-btn primary" onclick="downloadChart()">↓ Download chart PNG</button>
+<div class="dl-row">
+  <button class="dl-btn" onclick="downloadCSV()">↓ CSV</button>
+  <button class="dl-btn primary" onclick="downloadDash()">↓ PNG</button>
 </div>
 
 <script>
-const years = [2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025,2026,2027];
-const totalByYear = [356246473,457704261,491450113,628931149,641743360,665402741,686337986,650248288,636742771,600048969,332873785,230587380,131577056,76314274,26169932];
-
-const byYearFunder = {
+const years=[2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025,2026,2027];
+const totalByYear=[356246473,457704261,491450113,628931149,641743360,665402741,686337986,650248288,636742771,600048969,332873785,230587380,131577056,76314274,26169932];
+const byYearFunder={
   'Bilateral':    [279575200,341906800,379276800,441271400,423136400,449855900,408931100,364512900,334678500,306233900,207087700,155072400,79438840,49661690,12756140],
   'Foundation':   [25191780,50144530,58558910,70552270,67684670,58814440,66212920,97784140,178976200,186419800,44585840,22848430,4748574,3178404,2348404],
   'Multilateral': [43700380,56162580,43690990,97936520,132403300,139122500,180640000,159466500,95184280,86545610,69721480,48744590,44595270,22035460,11065380],
   'NGO':          [5507326,6948237,7838008,16407580,15734910,15246510,28530670,26892090,26983690,20849630,11478740,3922012,2794368,1438717,0],
   'Private Sector':[2271743,2542083,2085391,2763359,2784043,2363363,2023285,1592609,920093,0,0,0,0,0,0]
 };
-
-const countryData = {
-  'Brazil':   [213357016,263514442,276102744,327056974,310801052,329234175,293124263,306663211,281378650,194903276,140551994,97944299,44483696,18035942,6765104],
+const countryData={
   'Peru':     [62304640,62515900,61400690,89727090,89214340,94294170,115892000,111748000,133920800,127034900,72867860,44500430,28438410,24984820,7722574],
   'Colombia': [17552660,27143250,47763400,82911130,97783770,111584700,111289400,104228300,96625350,111221600,41566540,34940310,26120620,16029900,8608606],
   'Ecuador':  [19812500,32932890,36292440,52513250,55153840,45494480,38803050,40973140,38246200,59283560,22121160,17869350,11563840,4782490,1434327],
   'Guyana':   [4598306,23645430,22896600,25520540,27646040,27773380,70951290,8093906,9824900,9718932,8332890,2775986,1123489,438889,305556],
   'Bolivia':  [12802960,13802550,14710000,13229780,27781980,28345480,25585320,27364560,29085310,28576430,9086023,6113657,3416422,1851602,0],
   'Suriname': [609006,2127675,2086500,5449498,7082635,6320607,7351871,6613301,3992382,5956587,4919506,2578547,2303589,1616089,305556],
+  'Venezuela':[1287631,1325301,672023,583459,739263,205804,265804,345804,78333,990775,600000,600000,400000,0,0],
   'Other':    [5371957,14000514,11157729,11452487,8280823,2753351,1340792,1572870,1669189,2353684,1347812,1864811,1247610,710796,1028210]
 };
+const funderColors={'Bilateral':'#27AE60','Foundation':'#2980B9','Multilateral':'#E67E22','NGO':'#9B59B6','Private Sector':'#4A4A4A'};
+const countryColors={'Peru':'#2980B9','Colombia':'#E67E22','Ecuador':'#9B59B6','Guyana':'#F39C12','Bolivia':'#1AA3C9','Suriname':'#8A8A8A','Venezuela':'#e74c3c','Other':'#4A4A4A'};
+const spikePositions={Brazil:{cx:330,cy:250},Peru:{cx:175,cy:260},Colombia:{cx:255,cy:100},Ecuador:{cx:148,cy:175},Bolivia:{cx:290,cy:380},Guyana:{cx:430,cy:115},Suriname:{cx:478,cy:155},Venezuela:{cx:355,cy:72}};
+const brazilByYear=[213357016,263514442,276102744,327056974,310801052,329234175,293124263,306663211,281378650,194903276,140551994,97944299,44483696,18035942,6765104];
 
-const funderColors = {'Bilateral':'#27AE60','Foundation':'#2980B9','Multilateral':'#E67E22','NGO':'#9B59B6','Private Sector':'#4A4A4A'};
-const countryColors = {'Brazil':'#27AE60','Peru':'#2980B9','Colombia':'#E67E22','Ecuador':'#9B59B6','Guyana':'#F39C12','Bolivia':'#1AA3C9','Suriname':'#8A8A8A','Other':'#4A4A4A'};
+let breakdown='total', yearChart, funderChart, areaChart;
 
-let breakdown = 'total';
-let yearChart, funderChart;
-
-function buildSliderLabels() {
-  const container = document.getElementById('slider-labels');
-  const show = [0,2,4,6,8,10,12,14];
-  container.innerHTML = show.map(i =>
-    `<span id="lbl-${i}" style="position:absolute;left:${(i/14*100).toFixed(1)}%;transform:translateX(-50%)">${years[i]}</span>`
-  ).join('');
-  container.style.position = 'relative';
-  container.style.height = '18px';
-}
-
-function updateFill() {
-  const s = parseInt(document.getElementById('yr-start').value);
-  const e = parseInt(document.getElementById('yr-end').value);
-  const lo = Math.min(s,e), hi = Math.max(s,e);
-  const fill = document.getElementById('slider-fill');
-  fill.style.left = (lo/14*100).toFixed(1) + '%';
-  fill.style.width = ((hi-lo)/14*100).toFixed(1) + '%';
-  document.getElementById('range-display').textContent = years[lo] + ' — ' + years[hi];
-
-  document.querySelectorAll('#slider-labels span').forEach(sp => {
-    const idx = parseInt(sp.id.replace('lbl-',''));
-    sp.className = (idx >= lo && idx <= hi) ? 'active-label' : '';
+// ── RANGE SLIDER ──────────────────────────────────────────────────────────────
+function buildRangeLabels(){
+  const c=document.getElementById('range-labels');
+  [0,2,4,6,8,10,12,14].forEach(i=>{
+    const s=document.createElement('span');
+    s.id='rl-'+i; s.textContent=years[i];
+    c.appendChild(s);
   });
 }
+function updateFill(){
+  const s=parseInt(document.getElementById('yr-start').value);
+  const e=parseInt(document.getElementById('yr-end').value);
+  const lo=Math.min(s,e),hi=Math.max(s,e);
+  const fill=document.getElementById('dual-fill');
+  fill.style.left=(lo/14*100).toFixed(1)+'%';
+  fill.style.width=((hi-lo)/14*100).toFixed(1)+'%';
+  document.getElementById('range-display').textContent=years[lo]+' — '+years[hi];
+  document.querySelectorAll('#range-labels span').forEach(sp=>{
+    const idx=parseInt(sp.id.replace('rl-',''));
+    sp.className=(idx>=lo&&idx<=hi)?'on':'';
+  });
+}
+function getRange(){
+  const s=parseInt(document.getElementById('yr-start').value);
+  const e=parseInt(document.getElementById('yr-end').value);
+  return[Math.min(s,e),Math.max(s,e)];
+}
+function onSlider(){updateFill();updateCharts();}
 
-function getRange() {
-  const s = parseInt(document.getElementById('yr-start').value);
-  const e = parseInt(document.getElementById('yr-end').value);
-  return [Math.min(s,e), Math.max(s,e)];
+function fmt(n){
+  if(n>=1e9)return'$'+(n/1e9).toFixed(1)+'B';
+  if(n>=1e6)return'$'+Math.round(n/1e6)+'M';
+  return'$'+Math.round(n/1e3)+'K';
 }
 
-function onSlider() {
-  updateFill();
-  updateCharts();
-}
-
-function fmt(n) {
-  if (n >= 1e9) return '$' + (n/1e9).toFixed(1) + 'B';
-  if (n >= 1e6) return '$' + Math.round(n/1e6) + 'M';
-  return '$' + Math.round(n/1e3) + 'K';
-}
-
-function updateCharts() {
-  const [s, e] = getRange();
-  const sliceTotal = totalByYear.slice(s, e+1);
-  const rangeTotal = sliceTotal.reduce((a,b)=>a+b,0);
-  const labels = years.slice(s, e+1);
-
-  document.getElementById('m-total').textContent = fmt(rangeTotal);
-  document.getElementById('m-years').textContent = years[s] + ' – ' + years[e];
-  document.getElementById('m-latest').textContent = fmt(totalByYear[e]);
-  document.getElementById('m-latest-year').textContent = years[e];
-
-  const brazilSlice = countryData['Brazil'].slice(s,e+1).reduce((a,b)=>a+b,0);
-  document.getElementById('m-brazil').textContent = Math.round(brazilSlice/rangeTotal*100) + '%';
-
-  if (yearChart) yearChart.destroy();
-  const ctx = document.getElementById('yearChart').getContext('2d');
-  const peakVal = Math.max(...totalByYear.slice(s,e+1));
-
+// ── CHARTS ────────────────────────────────────────────────────────────────────
+function updateCharts(){
+  const[s,e]=getRange();
+  const sliceTotal=totalByYear.slice(s,e+1);
+  const rangeTotal=sliceTotal.reduce((a,b)=>a+b,0);
+  const labels=years.slice(s,e+1);
+  document.getElementById('m-total').textContent=fmt(rangeTotal);
+  document.getElementById('m-years').textContent=years[s]+' – '+years[e];
+  document.getElementById('m-latest').textContent=fmt(totalByYear[e]);
+  document.getElementById('m-latest-year').textContent=years[e];
+  if(yearChart)yearChart.destroy();
+  const ctx=document.getElementById('yearChart').getContext('2d');
+  const peakVal=Math.max(...totalByYear.slice(s,e+1));
   let datasets;
-  if (breakdown === 'total') {
-    datasets = [{
-      label: 'Total funding',
-      data: sliceTotal,
-      backgroundColor: sliceTotal.map((v,i) => {
-        const yi = s+i;
-        if (totalByYear[yi] === peakVal) return '#2ECC71';
-        if (yi >= 10) return '#E67E22';
-        return '#27AE60';
-      }),
-      borderRadius: 3
-    }];
-  } else if (breakdown === 'funder') {
-    datasets = Object.keys(byYearFunder).map(f => ({
-      label: f, data: byYearFunder[f].slice(s,e+1),
-      backgroundColor: funderColors[f], borderRadius: 2, stack: 'f'
-    }));
-  } else {
-    datasets = Object.keys(countryData).map(c => ({
-      label: c, data: countryData[c].slice(s,e+1),
-      backgroundColor: countryColors[c], borderRadius: 2, stack: 'c'
-    }));
+  if(breakdown==='total'){
+    datasets=[{label:'Total',data:sliceTotal,backgroundColor:sliceTotal.map((v,i)=>{const yi=s+i;if(totalByYear[yi]===peakVal)return'#2ECC71';if(yi>=10)return'#E67E22';return'#27AE60';}),borderRadius:2}];
+  }else if(breakdown==='funder'){
+    datasets=Object.keys(byYearFunder).map(f=>({label:f,data:byYearFunder[f].slice(s,e+1),backgroundColor:funderColors[f],borderRadius:1,stack:'f'}));
+  }else{
+    const allC={...countryData};
+    datasets=Object.keys(allC).map(c=>({label:c,data:allC[c].slice(s,e+1),backgroundColor:countryColors[c],borderRadius:1,stack:'c'}));
   }
-
-  yearChart = new Chart(ctx, {
-    type: 'bar',
-    data: { labels, datasets },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + fmt(c.raw) }}},
-      scales: {
-        x: { ticks: { color: '#8A8A8A', font: { size: 10 }, autoSkip: false, maxRotation: 45 }, grid: { display: false }, border: { color: '#333' }},
-        y: { ticks: { callback: v => fmt(v), color: '#8A8A8A', font: { size: 10 }}, grid: { color: 'rgba(255,255,255,0.05)' }, border: { color: '#333' }}
-      }
-    }
-  });
-
-  updateCountryBars(s, e, rangeTotal);
-  updateFunderChart(s, e);
-
-  const peakYear = years[totalByYear.indexOf(Math.max(...totalByYear.slice(s,e+1)) )];
-  const endAmt = fmt(totalByYear[e]);
-  document.getElementById('chart-annotation').innerHTML =
-    s <= 6 && e >= 6
-      ? `<strong>Peak: $686M in 2019.</strong> Funding has declined ${Math.round((1 - totalByYear[e]/686337986)*100)}% to ${endAmt} by ${years[e]}.`
-      : `<strong>${fmt(rangeTotal)}</strong> total across ${years[s]}–${years[e]}. Adjust range to explore the full story.`;
+  yearChart=new Chart(ctx,{type:'bar',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{x:{ticks:{color:'#555',font:{size:9},autoSkip:false,maxRotation:45},grid:{display:false},border:{color:'#222'}},y:{ticks:{callback:v=>fmt(v),color:'#555',font:{size:9}},grid:{color:'rgba(255,255,255,0.03)'},border:{color:'#222'}}}}});
+  updateCountryBars(s,e,rangeTotal);
+  const endPct=Math.round((1-totalByYear[e]/686337986)*100);
 }
 
-function updateCountryBars(s, e, rangeTotal) {
-  const container = document.getElementById('country-bars');
-  const totals = {};
-  Object.keys(countryData).forEach(c => { totals[c] = countryData[c].slice(s,e+1).reduce((a,b)=>a+b,0); });
-  const sorted = Object.entries(totals).sort((a,b)=>b[1]-a[1]);
-  const max = sorted[0][1];
-  container.innerHTML = sorted.map(([c, amt]) => `
+function updateCountryBars(s,e,rangeTotal){
+  const container=document.getElementById('country-bars');
+  const totals={};
+  Object.keys(countryData).forEach(c=>{totals[c]=countryData[c].slice(s,e+1).reduce((a,b)=>a+b,0);});
+  const sorted=Object.entries(totals).sort((a,b)=>b[1]-a[1]);
+  const max=sorted[0][1];
+  container.innerHTML=sorted.map(([c,amt])=>`
     <div class="cbar-row">
       <div class="cbar-name">${c}</div>
       <div class="cbar-track"><div class="cbar-fill" style="width:${Math.round(amt/max*100)}%;background:${countryColors[c]}"></div></div>
       <div class="cbar-amt">${fmt(amt)}</div>
     </div>`).join('');
-  document.getElementById('country-annotation').innerHTML =
-    `<strong>Brazil: ${Math.round(totals['Brazil']/rangeTotal*100)}%</strong> of all funding in selected range.`;
 }
 
-function updateFunderChart(s, e) {
-  if (funderChart) funderChart.destroy();
-  const ctx2 = document.getElementById('funderChart').getContext('2d');
-  const ft = {};
-  Object.keys(byYearFunder).forEach(f => { ft[f] = byYearFunder[f].slice(s,e+1).reduce((a,b)=>a+b,0); });
-  const total = Object.values(ft).reduce((a,b)=>a+b,0);
-  document.getElementById('funder-legend').innerHTML = Object.entries(ft)
-    .map(([f,amt]) => `<span class="leg-item"><span class="leg-sq" style="background:${funderColors[f]}"></span>${f} ${Math.round(amt/total*100)}%</span>`).join('');
-  funderChart = new Chart(ctx2, {
-    type: 'bar',
-    data: { labels: [''], datasets: Object.keys(ft).map(f => ({ label: f, data: [ft[f]], backgroundColor: funderColors[f], stack: 'f' })) },
-    options: {
-      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + c.dataset.label + ': ' + fmt(c.raw) + ' (' + Math.round(c.raw/total*100) + '%)' }}},
-      scales: {
-        x: { stacked: true, ticks: { callback: v => fmt(v), color: '#8A8A8A', font: { size: 10 }}, grid: { color: 'rgba(255,255,255,0.05)' }, border: { color: '#333' }},
-        y: { stacked: true, display: false }
-      }
-    }
+function buildAreaChart(){
+  const legend=document.getElementById('area-legend');
+  legend.innerHTML=Object.keys(byYearFunder).map(f=>`<span class="leg-item"><span class="leg-sq" style="background:${funderColors[f]}"></span>${f}</span>`).join('');
+  if(areaChart)areaChart.destroy();
+  const ctx=document.getElementById('areaChart').getContext('2d');
+  areaChart=new Chart(ctx,{
+    type:'line',
+    data:{labels:years,datasets:Object.keys(byYearFunder).map(f=>({label:f,data:byYearFunder[f].map(v=>v/1e6),backgroundColor:funderColors[f]+'88',borderColor:funderColors[f],borderWidth:1.5,fill:true,tension:0.3,pointRadius:0,pointHoverRadius:3}))},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:c=>` ${c.dataset.label}: $${Math.round(c.raw)}M`}}},scales:{x:{stacked:true,ticks:{color:'#555',font:{size:9},autoSkip:true,maxTicksLimit:8},grid:{display:false},border:{color:'#222'}},y:{stacked:true,ticks:{callback:v=>'$'+Math.round(v)+'M',color:'#555',font:{size:9}},grid:{color:'rgba(255,255,255,0.03)'},border:{color:'#222'}}}}
   });
 }
 
-function setBreakdown(type, el) {
-  breakdown = type;
-  document.querySelectorAll('.tog').forEach(t => t.classList.remove('active'));
+function setBreakdown(type,el){
+  breakdown=type;
+  document.querySelectorAll('.tog').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
   updateCharts();
 }
 
-function downloadCSV() {
-  const [s, e] = getRange();
-  let csv = 'Year,Total,Brazil,Peru,Colombia,Ecuador,Guyana,Bolivia,Suriname,Other,Bilateral,Foundation,Multilateral,NGO,Private Sector\n';
-  for (let i = s; i <= e; i++) {
-    const row = [years[i], totalByYear[i], ...Object.values(countryData).map(d=>d[i]), ...Object.values(byYearFunder).map(d=>d[i])];
-    csv += row.join(',') + '\n';
+function downloadCSV(){
+  const[s,e]=getRange();
+  let csv='Year,Total,'+Object.keys(countryData).join(',')+','+Object.keys(byYearFunder).join(',')+'\n';
+  for(let i=s;i<=e;i++){
+    const row=[years[i],totalByYear[i],...Object.values(countryData).map(d=>d[i]),...Object.values(byYearFunder).map(d=>d[i])];
+    csv+=row.join(',')+'\n';
   }
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = `amazon_funding_${years[s]}_${years[e]}.csv`; a.click();
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='amazon_decline.csv';a.click();
 }
 
-function downloadChart() {
-  const canvas = document.getElementById('yearChart');
-  const a = document.createElement('a');
-  a.href = canvas.toDataURL('image/png');
-  a.download = `amazon_funding_${years[getRange()[0]]}_${years[getRange()[1]]}.png`; a.click();
+function downloadDash(){
+  const btn=document.querySelector('.dl-btn.primary');
+  btn.textContent='...';
+  html2canvas(document.body,{backgroundColor:'#111',scale:2,logging:false}).then(c=>{
+    const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download='amazon_funding_drying_up.png';a.click();
+    btn.textContent='↓ PNG';
+  });
 }
 
-buildSliderLabels();
+buildRangeLabels();
 updateFill();
+buildAreaChart();
 updateCharts();
 </script>
 </body>
