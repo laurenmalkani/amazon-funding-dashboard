@@ -19,19 +19,9 @@
   .nav-pill:hover:not(.active) { border-color: #555; color: #ccc; }
 
   /* MAIN LAYOUT */
-  .main { display: grid; grid-template-columns: 1fr 1.4fr; overflow: hidden; }
+  .main { display: grid; grid-template-columns: 1fr; overflow: hidden; }
 
-  /* LEFT — MAP */
-  .map-side { position: relative; background: #0d0d0d; display: flex; flex-direction: column; align-items: center; justify-content: center; border-right: 0.5px solid #1e1e1e; padding: 20px; overflow: hidden; }
-  .map-label { position: absolute; top: 16px; left: 20px; font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 0.1em; }
-  .map-year-badge { position: absolute; top: 16px; right: 20px; font-size: 11px; color: #27AE60; font-weight: 600; }
-  #mapSvg { width: 100%; max-height: 78%; }
-  .map-slider-wrap { width: 85%; margin-top: 12px; }
-  .map-slider-label { display: flex; justify-content: space-between; font-size: 10px; color: #444; margin-bottom: 6px; }
-  input[type=range].map-slider { width: 100%; -webkit-appearance: none; appearance: none; height: 3px; background: #2a2a2a; border-radius: 2px; outline: none; }
-  input[type=range].map-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #27AE60; cursor: pointer; border: 2px solid #111; }
-
-  /* RIGHT — DATA */
+  /* DATA */
   .data-side { display: grid; grid-template-rows: auto 1fr auto auto; overflow: hidden; padding: 16px; gap: 12px; }
 
   /* METRICS */
@@ -126,48 +116,7 @@
 <!-- MAIN -->
 <div class="main">
 
-  <!-- LEFT: MAP -->
-  <div class="map-side">
-    <div class="map-label">Amazon Basin</div>
-    <svg id="mapSvg" viewBox="0 0 600 500" xmlns="http://www.w3.org/2000/svg">
-      <!-- Basin outline -->
-      <path d="M320,30 Q380,20 420,50 Q460,80 480,120 Q500,160 490,200 Q480,240 460,270 Q440,300 410,320 Q380,340 350,350 Q320,360 290,355 Q260,350 240,340 Q200,320 180,300 Q160,280 150,260 Q140,240 145,220 Q150,200 160,185 Q170,170 175,155 Q180,140 170,125 Q160,110 165,95 Q170,80 185,68 Q200,55 220,45 Q240,35 260,30 Q290,25 320,30Z" fill="none" stroke="#2a2a2a" stroke-width="1.5"/>
-      <!-- Country blobs - sized roughly by area in basin -->
-      <g id="countryBrazil">
-        <ellipse cx="330" cy="250" rx="110" ry="90" fill="#27AE60" opacity="0.15" class="country-shape" data-country="Brazil"/>
-        <text x="330" y="255" text-anchor="middle" fill="#27AE60" font-size="11" font-weight="600">Brazil</text>
-      </g>
-      <g id="countryPeru">
-        <ellipse cx="175" cy="260" rx="55" ry="65" fill="#2980B9" opacity="0.15" class="country-shape" data-country="Peru"/>
-        <text x="175" y="265" text-anchor="middle" fill="#2980B9" font-size="10">Peru</text>
-      </g>
-      <g id="countryColombia">
-        <ellipse cx="255" cy="100" rx="60" ry="45" fill="#E67E22" opacity="0.15" class="country-shape" data-country="Colombia"/>
-        <text x="255" y="105" text-anchor="middle" fill="#E67E22" font-size="10">Colombia</text>
-      </g>
-      <g id="countryEcuador">
-        <ellipse cx="148" cy="175" rx="35" ry="30" fill="#9B59B6" opacity="0.15" class="country-shape" data-country="Ecuador"/>
-        <text x="148" y="179" text-anchor="middle" fill="#9B59B6" font-size="9">Ecuador</text>
-      </g>
-      <g id="countryBolivia">
-        <ellipse cx="290" cy="380" rx="50" ry="35" fill="#1AA3C9" opacity="0.15" class="country-shape" data-country="Bolivia"/>
-        <text x="290" y="384" text-anchor="middle" fill="#1AA3C9" font-size="10">Bolivia</text>
-      </g>
-      <g id="countryGuyana">
-        <ellipse cx="430" cy="115" rx="35" ry="28" fill="#F39C12" opacity="0.15" class="country-shape" data-country="Guyana"/>
-        <text x="430" y="119" text-anchor="middle" fill="#F39C12" font-size="9">Guyana</text>
-      </g>
-      <g id="countrySuriname">
-        <ellipse cx="478" cy="155" rx="22" ry="18" fill="#8A8A8A" opacity="0.15" class="country-shape" data-country="Suriname"/>
-        <text x="478" y="158" text-anchor="middle" fill="#8A8A8A" font-size="8">Suriname</text>
-      </g>
-      <g id="countryVenezuela">
-        <ellipse cx="355" cy="72" rx="28" ry="20" fill="#e74c3c" opacity="0.15" class="country-shape" data-country="Venezuela"/>
-        <text x="355" y="76" text-anchor="middle" fill="#e74c3c" font-size="8">Venezuela</text>
-      </g>
-    </svg></div>
-
-  <!-- RIGHT: DATA -->
+  <!-- DATA -->
   <div class="data-side">
 
     <!-- METRICS -->
@@ -292,7 +241,6 @@ const countryData={
 };
 const funderColors={'Bilateral':'#27AE60','Foundation':'#2980B9','Multilateral':'#E67E22','NGO':'#9B59B6','Private Sector':'#4A4A4A'};
 const countryColors={'Peru':'#2980B9','Colombia':'#E67E22','Ecuador':'#9B59B6','Guyana':'#F39C12','Bolivia':'#1AA3C9','Suriname':'#8A8A8A','Venezuela':'#e74c3c','Other':'#4A4A4A'};
-const spikePositions={Brazil:{cx:330,cy:250},Peru:{cx:175,cy:260},Colombia:{cx:255,cy:100},Ecuador:{cx:148,cy:175},Bolivia:{cx:290,cy:380},Guyana:{cx:430,cy:115},Suriname:{cx:478,cy:155},Venezuela:{cx:355,cy:72}};
 const brazilByYear=[213357016,263514442,276102744,327056974,310801052,329234175,293124263,306663211,281378650,194903276,140551994,97944299,44483696,18035942,6765104];
 
 let breakdown='total', yearChart, funderChart, areaChart;
